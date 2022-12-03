@@ -5,7 +5,12 @@
 #include <fstream>
 #include <cstdlib>
 #include <vector>
+
 using namespace std;
+
+string nazwaPliku = "Adresaci.txt";
+string nazwaPliku2 = "Uzytkownicy.txt";
+string nazwaPliku3 = "AdresaciTymczasowi.txt";
 
 string konwersjaIntNaString (int liczba)
 {
@@ -64,8 +69,14 @@ int wczytajLiczbeCalkowita()
 
 struct Adresat
 {
-    int id = 0;
+    int idAdresata = 0, idUzytkownika = 0;
     string imie = "", nazwisko = "", numerTelefonu = "", email = "", adres = "";
+};
+
+struct Uzytkownik
+{
+    int idUzytkownika = 0, haslo = 0;
+    string login = "";
 };
 
 vector <string> dzielenieCiaguZnakowNaPojedynczeDane (string ciagZnakowDotyczacyJednejOsoby)
@@ -96,28 +107,25 @@ string laczeniePojedynczychDanychWCiagZnakow (Adresat daneOsoby)
     string liniaTekstu = "";
     string przerywnik = "|";
 
-    liniaTekstu = konwersjaIntNaString(daneOsoby.id) + przerywnik + daneOsoby.imie + przerywnik + daneOsoby.nazwisko + przerywnik + daneOsoby.numerTelefonu + przerywnik + daneOsoby.email + przerywnik + daneOsoby.adres + przerywnik;
+    liniaTekstu = konwersjaIntNaString(daneOsoby.idAdresata) + przerywnik + konwersjaIntNaString(daneOsoby.idUzytkownika) + przerywnik + daneOsoby.imie + przerywnik + daneOsoby.nazwisko + przerywnik + daneOsoby.numerTelefonu + przerywnik + daneOsoby.email + przerywnik + daneOsoby.adres + przerywnik;
 
     return liniaTekstu;
 }
 
-void wczytajAdresatowZPliku(vector <Adresat> &adresaci)
+int wczytajAdresatowZPliku(vector <Adresat> &adresaci, int &idZalogowanegoUzytkownika)
 {
     Adresat danePojedynczejOsoby;
     vector <string> daneDotyczaceJednejOsoby;
     string liniaTekstu;
     string linia;
-    int numerLinii = 1;
+    int numerLinii = 1, idOstatniegoUzytkownika = 0;
+
+    adresaci.clear();
 
     fstream plik;
-    plik.open("ksiazkaAdresowa.txt", ios::in);
+    plik.open(nazwaPliku.c_str(), ios::in);
 
-    if(plik.good() == false)
-    {
-        cout << "Brak pliku bazowego!" << endl;
-        Sleep(1000);
-    }
-    else
+    if(plik.good() == true)
     {
         while(getline(plik, linia))
         {
@@ -129,384 +137,698 @@ void wczytajAdresatowZPliku(vector <Adresat> &adresaci)
             }
             daneDotyczaceJednejOsoby = dzielenieCiaguZnakowNaPojedynczeDane(liniaTekstu);
 
-            danePojedynczejOsoby.id = stoi(daneDotyczaceJednejOsoby[0]);
-            danePojedynczejOsoby.imie = daneDotyczaceJednejOsoby[1];
-            danePojedynczejOsoby.nazwisko = daneDotyczaceJednejOsoby[2];
-            danePojedynczejOsoby.numerTelefonu = daneDotyczaceJednejOsoby[3];
-            danePojedynczejOsoby.email = daneDotyczaceJednejOsoby[4];
-            danePojedynczejOsoby.adres = daneDotyczaceJednejOsoby[5];
+            danePojedynczejOsoby.idAdresata = stoi(daneDotyczaceJednejOsoby[0]);
+            danePojedynczejOsoby.idUzytkownika = stoi(daneDotyczaceJednejOsoby[1]);
 
-            adresaci.push_back(danePojedynczejOsoby);
+            if (danePojedynczejOsoby.idUzytkownika == idZalogowanegoUzytkownika)
+            {
+                danePojedynczejOsoby.imie = daneDotyczaceJednejOsoby[2];
+                danePojedynczejOsoby.nazwisko = daneDotyczaceJednejOsoby[3];
+                danePojedynczejOsoby.numerTelefonu = daneDotyczaceJednejOsoby[4];
+                danePojedynczejOsoby.email = daneDotyczaceJednejOsoby[5];
+                danePojedynczejOsoby.adres = daneDotyczaceJednejOsoby[6];
+
+                adresaci.push_back(danePojedynczejOsoby);
+            }
+
+            idOstatniegoUzytkownika = danePojedynczejOsoby.idAdresata;
         }
         plik.close();
     }
+    return idOstatniegoUzytkownika;
+}
 
+void wczytajUzytkownikowZPliku(vector <Uzytkownik> &uzytkownicy)
+{
+    Uzytkownik danePojedynczegoUzytkownika;
+    vector <string> daneDotyczaceJednegoUzytkownia;
+    string liniaTekstu;
+    string linia;
+    int numerLinii = 1;
+
+    fstream plik;
+    plik.open(nazwaPliku2.c_str(), ios::in);
+
+    if(plik.good() == true)
+    {
+        while(getline(plik, linia))
+        {
+            switch(numerLinii)
+            {
+            case 1:
+                liniaTekstu = linia;
+                break;
+            }
+            daneDotyczaceJednegoUzytkownia = dzielenieCiaguZnakowNaPojedynczeDane(liniaTekstu);
+
+            danePojedynczegoUzytkownika.idUzytkownika = stoi(daneDotyczaceJednegoUzytkownia[0]);
+            danePojedynczegoUzytkownika.login = daneDotyczaceJednegoUzytkownia[1];
+            danePojedynczegoUzytkownika.haslo = stoi(daneDotyczaceJednegoUzytkownia[2]);
+
+            uzytkownicy.push_back(danePojedynczegoUzytkownika);
+        }
+        plik.close();
+    }
 }
 
 void wyswietlWszystkichAdresatow(vector <Adresat> &adresaci)
 {
     system("cls");
-
     cout << ">>> LISTA WSZYSKICH ADRESATOW <<<" << endl << endl;
-    unsigned int i = 0;
-    while (i < adresaci.size())
+
+    if (!adresaci.empty())
     {
-        cout <<"ID:                      " << adresaci[i].id << endl;
-        cout <<"Imie:                    " << adresaci[i].imie << endl;
-        cout <<"Nazwisko:                " << adresaci[i].nazwisko << endl;
-        cout <<"Numer telefonu:          " << adresaci[i].numerTelefonu << endl;
-        cout <<"Email:                   " << adresaci[i].email << endl;
-        cout <<"Adres:                   " << adresaci[i].adres << endl;
-        cout << endl;
-
-        i++;
-    }
-
-    cout << endl << "Nacisnij dowolny klawisz, aby przejsc dalej..." << endl;
-    getchar();
-}
-
-void dodajAdresata(vector <Adresat> &adresaci)
-{
-    fstream plik;
-    int idDodawanegoAdresata;
-    Adresat daneOstatniejOsoby, daneNowejOsoby;
-    string imie, nazwisko, numerTelefonu, email, adres, liniaTekstu;
-
-    plik.open("ksiazkaAdresowa.txt", ios::in);
-
-    if(plik.good() == false)
-    {
-        idDodawanegoAdresata = 1;
+        for (vector<Adresat>::iterator itr = adresaci.begin(); itr != adresaci.end(); itr++)
+        {
+            cout << "Id:                 " << itr->idAdresata << endl;
+            cout << "Imie:               " << itr->imie << endl;
+            cout << "Nazwisko:           " << itr->nazwisko << endl;
+            cout << "Numer telefonu:     " << itr->numerTelefonu << endl;
+            cout << "Email:              " << itr->email << endl;
+            cout << "Adres:              " << itr->adres << endl << endl;
+        }
     }
     else
     {
-        daneOstatniejOsoby = adresaci[adresaci.size() - 1];
-        idDodawanegoAdresata = daneOstatniejOsoby.id + 1;
+        cout << "Ksiazka adresowa jest pusta." << endl << endl;
     }
 
-    plik.close();
+    system("pause");
+}
+
+void wyswietlWszystkichUzytkownikow(vector <Uzytkownik> &uzytkownicy)
+{
+    system("cls");
+    cout << ">>> LISTA WSZYSKICH UZYTKOWNIKOW <<<" << endl << endl;
+
+    if (!uzytkownicy.empty())
+    {
+        for (vector<Uzytkownik>::iterator itr = uzytkownicy.begin(); itr != uzytkownicy.end(); itr++)
+        {
+            cout << "Id Uzytkownika:      " << itr->idUzytkownika << endl;
+            cout << "Nazwa:               " << itr->login << endl <<endl;
+            //cout << "Haslo:               " << itr->haslo << endl << endl;
+        }
+    }
+    else
+    {
+        cout << "Brak zapisanych uzytkownikow." << endl << endl;
+    }
+
+    system("pause");
+}
+
+void zapiszAdresatowDoPliku(vector <Adresat> &adresaci, int &idZalogowanegoUzytkownika)
+{
+    Adresat danePojedynczejOsoby;
+    vector <string> daneDotyczaceJednejOsoby;
+    string liniaTekstu;
+    int numerLinii = 1;
+
+    fstream plikOryginalny, plikTymczasowy;
+
+    plikOryginalny.open(nazwaPliku.c_str(), ios::in);
+    plikTymczasowy.open(nazwaPliku3.c_str(), ios::out);
+
+    vector<Adresat>::iterator  itr = adresaci.begin();
+
+    if(plikOryginalny.good() == true)
+    {
+        while(getline(plikOryginalny, liniaTekstu))
+        {
+            switch(numerLinii)
+            {
+            case 1:
+                break;
+            }
+
+            daneDotyczaceJednejOsoby = dzielenieCiaguZnakowNaPojedynczeDane(liniaTekstu);
+
+            danePojedynczejOsoby.idAdresata = stoi(daneDotyczaceJednejOsoby[0]);
+            danePojedynczejOsoby.idUzytkownika = stoi(daneDotyczaceJednejOsoby[1]);
+
+
+            if (danePojedynczejOsoby.idUzytkownika != idZalogowanegoUzytkownika)
+            {
+                plikTymczasowy << liniaTekstu << endl;
+            }
+
+            else if (danePojedynczejOsoby.idUzytkownika == idZalogowanegoUzytkownika && !adresaci.empty())
+            {
+                while (itr != adresaci.end())
+                {
+                    if (danePojedynczejOsoby.idAdresata == itr->idAdresata)
+                    {
+                        liniaTekstu = laczeniePojedynczychDanychWCiagZnakow(*itr);
+                        plikTymczasowy << liniaTekstu << endl;
+                        itr++;
+                        break;
+                    }
+                    else if (danePojedynczejOsoby.idAdresata != itr->idAdresata)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        plikOryginalny.close();
+        plikTymczasowy.close();
+
+        remove (nazwaPliku.c_str());
+        rename (nazwaPliku3.c_str(), nazwaPliku.c_str());
+    }
+}
+
+void dopiszAdresataDoPliku (Adresat daneNowejOsoby)
+{
+    string  liniaTekstu;
+
+    fstream plik;
+    plik.open(nazwaPliku.c_str(), ios::out | ios::app);
+
+    if (plik.good() == true)
+    {
+        liniaTekstu = laczeniePojedynczychDanychWCiagZnakow(daneNowejOsoby);
+        plik << liniaTekstu << endl;
+        plik.close();
+    }
+    else
+    {
+        cout << "Nie udalo sie otworzyc pliku i zapisac w nim danych." << endl;
+        system("pause");
+    }
+}
+
+void dopiszUzytkownikaDoPliku (Uzytkownik daneNowegoUzytkownika)
+{
+    fstream plik;
+    plik.open(nazwaPliku2.c_str(), ios::out | ios::app);
+
+    if (plik.good() == true)
+    {
+        plik << daneNowegoUzytkownika.idUzytkownika << '|';
+        plik << daneNowegoUzytkownika.login << '|';
+        plik << daneNowegoUzytkownika.haslo << '|' << endl;
+        plik.close();
+    }
+    else
+    {
+        cout << "Nie udalo sie otworzyc pliku i zapisac w nim danych." << endl;
+        system("pause");
+    }
+}
+
+void dodajAdresata(vector <Adresat> &adresaci, int &idZalogowanegoUzytkownika, int &idOstatniegoUzytkownika)
+{
+    Adresat daneNowejOsoby;
+
+    daneNowejOsoby.idAdresata = idOstatniegoUzytkownika + 1;
+    daneNowejOsoby.idUzytkownika = idZalogowanegoUzytkownika;
 
     system("cls");
-
     cout << ">>> DODAWANIE NOWEJ OSOBY <<<" << endl << endl;
 
     cout << "Podaj imie: ";
-    imie = wczytajLinie();
+    daneNowejOsoby.imie = wczytajLinie();
     cout << "Podaj nazwisko: ";
-    nazwisko = wczytajLinie();
+    daneNowejOsoby.nazwisko = wczytajLinie();
     cout << "Podaj numer telefonu: ";
-    numerTelefonu = wczytajLinie();
+    daneNowejOsoby.numerTelefonu = wczytajLinie();
     cout << "Podaj email: ";
-    email = wczytajLinie();
+    daneNowejOsoby.email = wczytajLinie();
     cout << "Podaj adres: ";
-    adres = wczytajLinie();
-
-
-    daneNowejOsoby.id = idDodawanegoAdresata;
-    daneNowejOsoby.imie = imie;
-    daneNowejOsoby.nazwisko = nazwisko;
-    daneNowejOsoby.numerTelefonu = numerTelefonu;
-    daneNowejOsoby.email = email;
-    daneNowejOsoby.adres = adres;
+    daneNowejOsoby.adres = wczytajLinie();
 
     adresaci.push_back(daneNowejOsoby);
 
-    liniaTekstu = laczeniePojedynczychDanychWCiagZnakow(daneNowejOsoby);
+    dopiszAdresataDoPliku(daneNowejOsoby);
 
+    cout << endl << "Adresat zostal dodany" << endl << endl;
 
-    plik.open("ksiazkaAdresowa.txt", ios::out | ios::app);
-
-    plik << liniaTekstu << endl;
-
-    plik.close();
-
-    cout << endl << "Osoba zostala dodana" << endl << endl;
-
-    cout << "Nacisnij dowolny klawisz, aby przejsc dalej..." << endl;
-    getchar();
-}
-
-void zapiszAdresatowDoPliku(vector <Adresat> &adresaci)
-{
-    string liniaTekstu;
-    fstream plik;
-    plik.open("ksiazkaAdresowa.txt", ios::out | ios:: trunc);
-
-    for (vector <Adresat> ::iterator itr = adresaci.begin(); itr != adresaci.end(); ++itr)
-    {
-        liniaTekstu = laczeniePojedynczychDanychWCiagZnakow(*itr);
-        plik << liniaTekstu << endl;
-    }
-
-    plik.close();
+    system ("pause");
 }
 
 void wyszukajAdresatowPoImieniu(vector <Adresat> &adresaci)
 {
-    string imie;
+    string imiePoszukiwanegoAdresata;
+    int iloscAdresatow = 0;
 
     system("cls");
-
-    cout << ">>> WYSZUKIWANIE PO IMIENIU <<<" << endl << endl;
-    cout << "Podaj imie osoby, jaka mamy wyszukac: ";
-    imie = wczytajLinie();
-    cout << endl;
-
-    unsigned int i = 0;
-    int licznik = 0;
-    while (i < adresaci.size())
+    if (!adresaci.empty())
     {
-        if (imie == adresaci[i].imie)
+        cout << ">>> WYSZUKIWANIE PO IMIENIU <<<" << endl << endl;
+
+        cout << "Podaj imie osoby, jaka mamy wyszukac: ";
+        imiePoszukiwanegoAdresata = wczytajLinie();
+
+        for (vector<Adresat>::iterator  itr = adresaci.begin(); itr != adresaci.end(); itr++)
         {
-            cout <<"ID:                      " << adresaci[i].id << endl;
-            cout <<"Imie:                    " << adresaci[i].imie << endl;
-            cout <<"Nazwisko:                " << adresaci[i].nazwisko << endl;
-            cout <<"Numer telefonu:          " << adresaci[i].numerTelefonu << endl;
-            cout <<"Email:                   " << adresaci[i].email << endl;
-            cout <<"Adres:                   " << adresaci[i].adres << endl;
-            cout << endl;
-            licznik++;
+            if (itr->imie == imiePoszukiwanegoAdresata)
+            {
+                cout << endl;
+                cout << "Id:                 " << itr->idAdresata << endl;
+                cout << "Imie:               " << itr->imie << endl;
+                cout << "Nazwisko:           " << itr->nazwisko << endl;
+                cout << "Numer Telefonu:     " << itr->numerTelefonu << endl;
+                cout << "Nr Email:           " << itr->email << endl;
+                cout << "Adres:              " << itr->adres << endl;
+                iloscAdresatow++;
+            }
         }
-        i++;
+        if (iloscAdresatow == 0)
+        {
+            cout << endl << "Nie ma adresatow z tym imieniem w ksiazce adresowej" << endl;
+        }
+        else
+        {
+            cout << endl << "Ilosc adresatow z imieniem: >>> " << imiePoszukiwanegoAdresata << " <<<";
+            cout << " w ksiazce adresowej wynosi: " << iloscAdresatow << endl << endl;
+        }
     }
-    if (licznik == 0)
+    else
     {
-        cout << "Brak w ksiazce adresowej osob z podanym imieniem !" << endl << endl << endl;
+        cout << "Ksiazka adresowa jest pusta" << endl << endl;
     }
-
-    cout << "Nacisnij dowolny klawisz, aby przejsc dalej..." << endl;
-    getchar();
+    cout << endl;
+    system("pause");
 }
 
 void wyszukajAdresatowPoNazwisku(vector <Adresat> &adresaci)
 {
-    string nazwisko;
+    string nazwiskoPoszukiwanegoAdresata;
+    int iloscAdresatow = 0;
 
     system("cls");
-
-    cout << ">>> WYSZUKIWANIE PO NAZWISKU <<<" << endl << endl;
-    cout << "Podaj nazwisko osoby, jaka mamy wyszukac: ";
-    nazwisko = wczytajLinie();
-    cout << endl;
-
-    unsigned int i = 0;
-    int licznik = 0;
-    while (i < adresaci.size())
+    if (!adresaci.empty())
     {
-        if (nazwisko == adresaci[i].nazwisko)
+        cout << ">>> WYSZUKIWANIE PO IMIENIU <<<" << endl << endl;
+
+        cout << "Podaj imie osoby, jaka mamy wyszukac: ";
+        nazwiskoPoszukiwanegoAdresata = wczytajLinie();
+
+        for (vector<Adresat>::iterator  itr = adresaci.begin(); itr != adresaci.end(); itr++)
         {
-            cout <<"ID:                      " << adresaci[i].id << endl;
-            cout <<"Imie:                    " << adresaci[i].imie << endl;
-            cout <<"Nazwisko:                " << adresaci[i].nazwisko << endl;
-            cout <<"Numer telefonu:          " << adresaci[i].numerTelefonu << endl;
-            cout <<"Email:                   " << adresaci[i].email << endl;
-            cout <<"Adres:                   " << adresaci[i].adres << endl;
-            cout << endl;
-            licznik++;
+            if (itr->nazwisko == nazwiskoPoszukiwanegoAdresata)
+            {
+                cout << endl;
+                cout << "Id:                 " << itr->idAdresata << endl;
+                cout << "Imie:               " << itr->imie << endl;
+                cout << "Nazwisko:           " << itr->nazwisko << endl;
+                cout << "Numer Telefonu:     " << itr->numerTelefonu << endl;
+                cout << "Nr Email:           " << itr->email << endl;
+                cout << "Adres:              " << itr->adres << endl;
+                iloscAdresatow++;
+            }
         }
-        i++;
+        if (iloscAdresatow == 0)
+        {
+            cout << endl << "Nie ma adresatow z tym nazwiskiem w ksiazce adresowej" << endl;
+        }
+        else
+        {
+            cout << endl << "Ilosc adresatow z nazwiskiem: >>> " << nazwiskoPoszukiwanegoAdresata << " <<<";
+            cout << " w ksiazce adresowej wynosi: " << iloscAdresatow << endl << endl;
+        }
     }
-    if (licznik == 0)
+    else
     {
-        cout << "Brak w ksiazce adresowej osob z podanym nazwiskiem !" << endl << endl << endl;
+        cout << "Ksiazka adresowa jest pusta" << endl << endl;
     }
-
-    cout << "Nacisnij dowolny klawisz, aby przejsc dalej..." << endl;
-    getchar();
+    cout << endl;
+    system("pause");
 }
 
-void usunAdresata(vector <Adresat> &adresaci)
+void usunAdresata(vector <Adresat> &adresaci, int &idZalogowanegoUzytkownika)
 {
-    char potwierdzenieWyboru;
-    Adresat daneUsuwanejOsoby;
-    int idUsuwanegoAdresata, zmiennaPomocnicza = 0;
+    char znak;
+    int idUsuwanegoAdresata = 0;
+    bool czyIstniejeAdresat = false;
 
     system("cls");
     cin.sync();
-    cout << ">>> USUWANIE WYBRANEJ OSOBY <<<" << endl << endl;
-    cout << "Podaj numer ID adresata, ktrego chcesz USUNAC: ";
 
-    idUsuwanegoAdresata = wczytajLiczbeCalkowita();
-
-    cout << endl;
-
-    for (vector <Adresat> ::iterator itr = adresaci.begin(); itr != adresaci.end(); ++itr)
+    if (!adresaci.empty())
     {
-        if (itr -> id == idUsuwanegoAdresata)
+        cout << ">>> USUWANIE WYBRANEJ OSOBY <<<" << endl << endl;
+        cout << "Podaj numer ID adresata ktorego chcesz USUNAC: ";
+        idUsuwanegoAdresata = wczytajLiczbeCalkowita();
+
+        for (vector<Adresat>::iterator itr = adresaci.begin(); itr != adresaci.end(); itr++)
         {
-            cout << "Potwierdz naciskajac klawisz 't':  ";
-            potwierdzenieWyboru = wczytajZnak();
-            zmiennaPomocnicza++;
-
-            if (potwierdzenieWyboru == 't')
+            if (itr->idAdresata == idUsuwanegoAdresata)
             {
-                adresaci.erase(itr);
-
-                zapiszAdresatowDoPliku(adresaci);
-
-                cout << endl << "Szukany adresat zostal USUNIETY!"  << endl << endl;
+                czyIstniejeAdresat = true;
+                cout << endl << endl << "Potwierdz naciskajac klawisz 't': ";
+                znak = wczytajZnak();
+                if (znak == 't')
+                {
+                    adresaci.erase(itr);
+                    cout << endl << endl << "Szukany adresat zostal USUNIETY" << endl << endl;
+                    zapiszAdresatowDoPliku(adresaci, idZalogowanegoUzytkownika);
+                    break;
+                }
+                else
+                {
+                    cout << endl << endl << "Wybrany adresat NIE zostal usuniety" << endl << endl;
+                    break;
+                }
             }
-            else
-            {
-                cout << endl << "Wpisano nieporawny znak! Nastapi powrot do menu glownego "  << endl << endl;
-            }
-            break;
+        }
+        if (czyIstniejeAdresat == false)
+        {
+            cout << endl << "Nie ma takiego adresata w ksiazce adresowej" << endl << endl;
         }
     }
-
-    if (zmiennaPomocnicza == 0)
+    else
     {
-        cout << "Brak adresata o podanym id!"<< endl << endl;
+        cout << "Ksiazka adresowa jest pusta" << endl << endl;
     }
 
-
-    cout << endl << "Nacisnij dowolny klawisz, aby przejsc dalej..." << endl;
-    getchar();
+    system("pause");
 }
 
-void edytujAdresata(vector <Adresat> &adresaci)
+void edytujAdresata(vector <Adresat> &adresaci, int &idZalogowanegoUzytkownika)
 {
     char wybor;
-    int idEdytowanegoAdresata, zmiennaPomocnicza = 0;
-    string imie = "", nazwisko = "", numerTelefonu = "", email = "", adres = "";
+    int idEdytowanegoAdresata;
+    bool czyIstniejeAdresat = false;
 
     system("cls");
     cin.sync();
-    cout << ">>> EDYTOWANIE WYBRANEJ OSOBY <<<" << endl << endl;
-    cout << "Wprowadz id wybranego adresata: " ;
-    idEdytowanegoAdresata = wczytajLiczbeCalkowita();
 
-    for (vector <Adresat> ::iterator itr = adresaci.begin(); itr != adresaci.end(); itr++)
+    if (!adresaci.empty())
     {
-        if (itr -> id == idEdytowanegoAdresata)
-        {
-            zmiennaPomocnicza++;
+        cout << ">>> EDYTOWANIE WYBRANEJ OSOBY <<<" << endl << endl;
+        cout << "Wprowadz id wybranego adresata: " ;
+        idEdytowanegoAdresata = wczytajLiczbeCalkowita();
 
-            cout << endl << "Wybierz pole, ktore chcesz edytowac: " << endl << endl;
-            cout << "1 - imie" << endl;
-            cout << "2 - nazwisko" << endl;
-            cout << "3 - numer" << endl;
-            cout << "4 - email" << endl;
-            cout << "5 - adres" << endl;
-            cout << "6 - powrot do menu" << endl;
-            cout << endl << "Twoj wybor: ";
-            wybor = wczytajZnak();
-
-            switch(wybor)
+        for (vector <Adresat> ::iterator itr = adresaci.begin(); itr != adresaci.end(); itr++)
             {
-            case '1':
-                cout << endl << "Podaj nowe imie: " ;
-                imie = wczytajLinie();
-                itr -> imie = imie;
+                if (itr -> idAdresata == idEdytowanegoAdresata)
+                {
+                    czyIstniejeAdresat = true;
 
-                zapiszAdresatowDoPliku(adresaci);
+                    cout << endl << "Wybierz pole, ktore chcesz edytowac: " << endl << endl;
+                    cout << "1 - imie" << endl;
+                    cout << "2 - nazwisko" << endl;
+                    cout << "3 - numer" << endl;
+                    cout << "4 - email" << endl;
+                    cout << "5 - adres" << endl;
+                    cout << "6 - powrot do menu" << endl;
+                    cout << endl << "Twoj wybor: ";
+                    wybor = wczytajZnak();
 
-                cout << endl << "Edycja zostala zakonczona!" << endl << endl;
-                break;
+                    switch(wybor)
+                    {
+                    case '1':
+                        cout << endl << "Podaj nowe imie: " ;
+                        itr -> imie = wczytajLinie();
 
-            case '2':
-                cout << endl << "Podaj nowe nazwisko: " ;
-                nazwisko = wczytajLinie();
-                itr -> nazwisko = nazwisko;
+                        zapiszAdresatowDoPliku(adresaci, idZalogowanegoUzytkownika);
 
-                zapiszAdresatowDoPliku(adresaci);
+                        cout << endl << "Edycja zostala zakonczona!" << endl << endl;
+                        break;
 
-                cout << endl << "Edycja zostala zakonczona!" << endl << endl;
-                break;
+                    case '2':
+                        cout << endl << "Podaj nowe nazwisko: " ;
+                        itr -> nazwisko = wczytajLinie();
 
-            case '3':
-                cout << endl << "Podaj nowy numer telefonu: " ;
-                numerTelefonu = wczytajLinie();
-                itr -> numerTelefonu = numerTelefonu;
+                        zapiszAdresatowDoPliku(adresaci, idZalogowanegoUzytkownika);
 
-                zapiszAdresatowDoPliku(adresaci);
+                        cout << endl << "Edycja zostala zakonczona!" << endl << endl;
+                        break;
 
-                cout << endl << "Edycja zostala zakonczona!" << endl << endl;
-                break;
+                    case '3':
+                        cout << endl << "Podaj nowy numer telefonu: " ;
+                        itr -> numerTelefonu = wczytajLinie();
 
-            case '4':
-                cout << endl << "Podaj nowy email: " ;
-                email = wczytajLinie();
-                itr -> email = email;
+                        zapiszAdresatowDoPliku(adresaci, idZalogowanegoUzytkownika);
 
-                zapiszAdresatowDoPliku(adresaci);
+                        cout << endl << "Edycja zostala zakonczona!" << endl << endl;
+                        break;
 
-                cout << endl << "Edycja zostala zakonczona!" << endl << endl;
-                break;
+                    case '4':
+                        cout << endl << "Podaj nowy email: " ;
+                        itr -> email = wczytajLinie();
 
-            case '5':
-                cout << endl << "Podaj nowy adres: " ;
-                adres = wczytajLinie();
-                itr -> adres = adres;
+                        zapiszAdresatowDoPliku(adresaci, idZalogowanegoUzytkownika);
 
-                zapiszAdresatowDoPliku(adresaci);
+                        cout << endl << "Edycja zostala zakonczona!" << endl << endl;
+                        break;
 
-                cout << endl << "Edycja zostala zakonczona!" << endl << endl;
-                break;
+                    case '5':
+                        cout << endl << "Podaj nowy adres: " ;
+                        itr -> adres = wczytajLinie();
 
-            case '6':
-                break;
+                        zapiszAdresatowDoPliku(adresaci, idZalogowanegoUzytkownika);
 
+                        cout << endl << "Edycja zostala zakonczona!" << endl << endl;
+                        break;
+
+                    case '6':
+                        cout << endl << "Powrot do menu glownego" << endl << endl;
+                        break;
+                    default:
+                        cout << endl << "Nie ma takiej opcji w menu! Powrot do menu glownego." << endl << endl;
+                        break;
+                    }
+                }
             }
-            break;
+
+            if (czyIstniejeAdresat == false)
+            {
+                cout << endl << "Nie ma takiego adresata w ksiazce adresowej." << endl << endl;
+            }
+    }
+    else
+    {
+        cout << "Ksiazka adresowa jest pusta." << endl << endl;
+    }
+    system("pause");
+}
+
+void zakonczProgram()
+{
+    cout << endl << "Koniec programu." << endl;
+    exit(0);
+}
+
+void zapiszUzytkownikowDoPliku (vector <Uzytkownik> &uzytkownicy)
+{
+    string liniaZDanymiAdresata = "";
+    fstream plik;
+
+    plik.open(nazwaPliku2.c_str(), ios::out | ios:: trunc);
+
+    if (plik.good())
+    {
+        for (vector <Uzytkownik> ::iterator itr = uzytkownicy.begin(); itr != uzytkownicy.end(); ++itr)
+        {
+            liniaZDanymiAdresata += konwersjaIntNaString(itr->idUzytkownika) + '|';
+            liniaZDanymiAdresata += itr->login + '|';
+            liniaZDanymiAdresata += konwersjaIntNaString(itr->haslo) + '|';
+
+            plik << liniaZDanymiAdresata << endl;
+            liniaZDanymiAdresata = "";
+        }
+        plik.close();
+    }
+    else
+    {
+        cout << "Nie mozna otworzyc pliku Uzytkownicy.txt" << endl;
+    }
+}
+
+void zmienHaslo(vector <Uzytkownik> &uzytkownicy, int &idZalogowanegoUzytkownika)
+{
+    int noweHaslo = 0;
+
+    cout <<"Podaj nowe haslo: ";
+    noweHaslo = wczytajLiczbeCalkowita();
+
+    for (vector<Uzytkownik>::iterator itr = uzytkownicy.begin(); itr != uzytkownicy.end(); itr++)
+        {
+            if (itr->idUzytkownika == idZalogowanegoUzytkownika)
+            {
+                itr->haslo = noweHaslo;
+                zapiszUzytkownikowDoPliku(uzytkownicy);
+            }
+        }
+
+    cout <<"Haslo zostalo zmienione " << endl;
+    system("pause");
+}
+
+void logowanie(vector <Uzytkownik> &uzytkownicy)
+{
+    vector <Adresat> adresaci;
+    int idZalogowanegoUzytkownika = 0, haslo = 0, iloscProbLogowania = 0, idOstatniegoUzytkownika = 0;
+    string login = "";
+    char wybor = 'x';
+    bool czyIstniejeUzytkownik = false;
+
+    if (!uzytkownicy.empty())
+    {
+        cout << "Podaj login: ";
+        login = wczytajLinie();
+
+        for (vector<Uzytkownik>::iterator  itr = uzytkownicy.begin(); itr != uzytkownicy.end(); itr++)
+        {
+            if (itr->login == login)
+            {
+                czyIstniejeUzytkownik = true;
+
+                while (iloscProbLogowania <3)
+                {
+                    cout << "Podaj haslo: Pozostalo prob " << 3 - iloscProbLogowania <<": ";
+                    haslo = wczytajLiczbeCalkowita();
+
+                    if (itr->haslo == haslo)
+                    {
+                        idZalogowanegoUzytkownika = itr->idUzytkownika ;
+
+                        cout << "Zalogowales sie." << endl;
+                        system("pause");
+
+                        while(wybor != '8')
+                        {
+                            idOstatniegoUzytkownika = wczytajAdresatowZPliku(adresaci, idZalogowanegoUzytkownika);
+
+                            system("cls");
+                            cin.sync();
+
+                            cout << ">>> KSIAZKA ADRESOWA <<<" << endl;
+                            cout << "-------------------------" << endl;
+                            cout << "1. Dodaj adresata" << endl;
+                            cout << "2. Wyszukaj adresatow po imieniu" << endl;
+                            cout << "3. Wyszukaj adresatow po nazwisku" << endl;
+                            cout << "4. Wyswietl wszystkich adresatow" << endl;
+                            cout << "5. Usun adresata" << endl;
+                            cout << "6. Edytuj adresata" << endl;
+                            cout << "-------------------------" << endl;
+                            cout << "7. Zmien haslo" << endl;
+                            cout << "8. Wyloguj sie" << endl;
+                            cout << "-------------------------" << endl;
+                            cout << "9. Zakoncz program" << endl;
+                            cout << "-------------------------" << endl;
+                            cout << "Twoj wybor: ";
+                            wybor = wczytajZnak();
+
+                            switch(wybor)
+                            {
+                            case '1':
+                                dodajAdresata(adresaci,idZalogowanegoUzytkownika, idOstatniegoUzytkownika);
+                                break;
+                            case '2':
+                                wyszukajAdresatowPoImieniu(adresaci);
+                                break;
+                            case '3':
+                                wyszukajAdresatowPoNazwisku(adresaci);
+                                break;
+                            case '4':
+                                wyswietlWszystkichAdresatow(adresaci);
+                                break;
+                            case '5':
+                                usunAdresata(adresaci, idZalogowanegoUzytkownika);
+                                break;
+                            case '6':
+                                edytujAdresata(adresaci, idZalogowanegoUzytkownika);
+                                break;
+                            case '7':
+                                zmienHaslo(uzytkownicy, idZalogowanegoUzytkownika);
+                                break;
+                            case '8':
+
+                                break;
+                            case '9':
+                                zakonczProgram();
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    iloscProbLogowania++;
+                }
+                if (iloscProbLogowania == 3)
+                {
+                    cout  << "Wprowadzono nieprawidlowe haslo 3 razy. Nastapi powrot do menu glownego" << endl;
+                    system("pause");
+                    break;
+                }
+            }
+        }
+        if (czyIstniejeUzytkownik == false)
+        {
+            cout << "Wprowadzono nieprawidlowy login" << endl;
+            system("pause");
         }
     }
-
-    if (zmiennaPomocnicza == 0)
+    else
     {
-        cout << endl<< "Brak adresata o podanym id!"<< endl << endl;
+        cout << "Brak uzytkownikow w bazie" << endl << endl;
+        system("pause");
+    }
+}
+
+void rejestracja (vector <Uzytkownik> &uzytkownicy)
+{
+    Uzytkownik daneNowegoUzytkownika;
+
+    if (uzytkownicy.empty() == true)
+    {
+        daneNowegoUzytkownika.idUzytkownika = 1;
+    }
+    else
+    {
+        daneNowegoUzytkownika.idUzytkownika = uzytkownicy.back().idUzytkownika + 1;
     }
 
-    cout << endl << "Nacisnij dowolny klawisz, aby przejsc dalej..." << endl;
-    getchar();
+    cout << "Podaj login: ";
+    daneNowegoUzytkownika.login = wczytajLinie();
+    cout << "Podaj haslo: ";
+    daneNowegoUzytkownika.haslo = wczytajLiczbeCalkowita();
+
+    uzytkownicy.push_back(daneNowegoUzytkownika);
+
+    dopiszUzytkownikaDoPliku(daneNowegoUzytkownika);
+
+    cout << endl << "Konto zalozono pomyslnie" << endl << endl;
+
+    system ("pause");
 }
 
 int main()
 {
-    vector <Adresat> adresaci;
+    vector <Uzytkownik> uzytkownicy;
     char wybor;
 
-    wczytajAdresatowZPliku(adresaci);
+    wczytajUzytkownikowZPliku(uzytkownicy);
 
     while(true)
     {
         system("cls");
         cin.sync();
-        cout << ">>> KSIAZKA ADRESOWA <<<" << endl << endl;
-        cout << "1. Dodaj adresata" << endl;
-        cout << "2. Wyszukaj po imieniu" << endl;
-        cout << "3. Wyszukaj po nazwisku" << endl;
-        cout << "4. Wyswietl wszystkich adresatow" << endl;
-        cout << "5. Usun adresata" << endl;
-        cout << "6. Edytuj adresata" << endl;
+        cout << ">>> MENU GLOWNE <<<" << endl;
+        cout << "-------------------------" << endl;
+        cout << "1. Rejestracja" << endl;
+        cout << "2. Logowanie" << endl;
         cout << "9. Zakoncz program" << endl;
-        cout << endl << "Twoj wybor: ";
+        cout << "-------------------------" << endl;
+        cout << "Twoj wybor: ";
         wybor = wczytajZnak();
+        cout << endl;
 
         switch(wybor)
         {
         case '1':
-            dodajAdresata(adresaci);
-            zapiszAdresatowDoPliku(adresaci);
+            rejestracja(uzytkownicy);
             break;
         case '2':
-            wyszukajAdresatowPoImieniu(adresaci);
-            break;
-        case '3':
-            wyszukajAdresatowPoNazwisku(adresaci);
-            break;
-        case '4':
-            wyswietlWszystkichAdresatow(adresaci);
-            break;
-        case '5':
-            usunAdresata(adresaci);
-            break;
-        case '6':
-            edytujAdresata(adresaci);
+            logowanie(uzytkownicy);
             break;
         case '9':
-            exit(0);
+            zakonczProgram();
             break;
         }
     }
